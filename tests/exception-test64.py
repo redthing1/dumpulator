@@ -12,7 +12,7 @@ def ZwOpenKey(dp: Dumpulator,
     return STATUS_NOT_IMPLEMENTED
 
 def main():
-    dp = Dumpulator("ExceptionTest64-full.dmp", trace=True)
+    dp = Dumpulator("dumps/ExceptionTest64-full.dmp", trace=True)
     dp.start(dp.regs.rip, end=0x1400015B0)
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ The example below opens `StringEncryptionFun_x64.dmp` (download a copy [here](ht
 ```python
 from dumpulator import Dumpulator
 
-dp = Dumpulator("StringEncryptionFun_x64.dmp")
+dp = Dumpulator("dumps/StringEncryptionFun_x64.dmp")
 temp_addr = dp.allocate(256)
 dp.call(0x140001000, [temp_addr, 0x140017000])
 decrypted = dp.read_str(temp_addr)
@@ -38,7 +38,7 @@ The `StringEncryptionFun_x64.dmp` is collected at the entry point of the `tests/
 ```python
 from dumpulator import Dumpulator
 
-dp = Dumpulator("StringEncryptionFun_x64.dmp", trace=True)
+dp = Dumpulator("dumps/StringEncryptionFun_x64.dmp", trace=True)
 dp.start(dp.regs.rip)
 ```
 
@@ -49,7 +49,7 @@ This will create `StringEncryptionFun_x64.dmp.trace` with a list of instructions
 ```python
 from dumpulator import Dumpulator
 
-dp = Dumpulator("my.dmp")
+dp = Dumpulator("dumps/my.dmp")
 buf = dp.call(0x140001000)
 dp.read_str(buf, encoding='utf-16')
 ```
@@ -78,7 +78,7 @@ prolog_start = 0x00007FFFC81C06C0
 # we want to stop the instruction after the prolog
 prolog_end = 0x00007FFFC81C06D6 + 7
 
-dp = Dumpulator("my.dmp", quiet=True)
+dp = Dumpulator("dumps/my.dmp", quiet=True)
 dp.regs.rcx = 0x1337
 dp.start(begin=prolog_start, end=prolog_end)
 print(f"rsp: {hex(dp.regs.rsp)}")

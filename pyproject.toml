@@ -1,8 +1,24 @@
-# Source: https://packaging.python.org/tutorials/packaging-projects/#creating-pyproject-toml
+[tool.poetry]
+name = "dumpulator"
+version = "1.0.0"
+description = "An easy-to-use library for emulating code in minidump files."
+authors = ["Duncan Ogilvie <dumpulator@mrexodia.re>"]
+readme = "README.md"
+homepage = "https://github.com/mrexodia/dumpulator"
+repository = "https://github.com/mrexodia/dumpulator"
+license = "BSL-1.0"
+packages = [{include = "dumpulator", from = "src"}, {include = "minidump", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+unicorn = "^2.1.3"
+pefile = ">=2021.9.3"
+capstone = "~4.0.2"
+setuptools = "^80.9.0"
+
+[tool.poetry.group.dev.dependencies]
+libclang = "~15.0.0"
 
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

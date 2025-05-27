@@ -38,7 +38,7 @@ def ZwSetEvent(dp: Dumpulator,
     return STATUS_NOT_IMPLEMENTED
 
 def main():
-    dp = Dumpulator("StringEncryptionFun_x64.dmp")
+    dp = Dumpulator("dumps/StringEncryptionFun_x64.dmp")
     dp.start(dp.regs.rip)
 
 if __name__ == '__main__':
