@@ -1,0 +1,19 @@
+FROM debian:bookworm-slim
+
+# install dependencies
+RUN apt update && apt install -y \
+  # common build dependencies
+  bash git curl ccache \
+  # c++ build dependencies
+  build-essential cmake ninja-build \
+  # python build dependencies
+  python3 python3-pip patchelf \
+  && apt clean && rm -rf /var/lib/apt/lists/*
+
+# install poetry for python
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+  && echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+
+# redbuild setup
+WORKDIR /prj
+CMD ["/bin/bash", "-l"]
