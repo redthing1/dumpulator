@@ -14,7 +14,7 @@ build the docker image with python dependencies
 docker build . -t redthing1/dumpulator
 ```
 
-run the image
+run the image with sources mounted
 ```sh
 podman run --rm -it -v $(pwd):/prj redthing1/dumpulator
 ```
