@@ -16,7 +16,7 @@ docker build . -t redthing1/dumpulator
 
 run the image with sources mounted
 ```sh
-podman run --rm -it -v $(pwd):/prj redthing1/dumpulator
+docker run --rm -it -v $(pwd):/prj redthing1/dumpulator
 ```
 
 inside the shell
