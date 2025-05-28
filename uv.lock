@@ -53,11 +53,15 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "sh" },
+    { name = "typer" },
+]
+libclang = [
     { name = "libclang" },
 ]
 
 [package.dev-dependencies]
-dev = [
+shell = [
     { name = "sh" },
     { name = "typer" },
 ]
@@ -65,32 +69,35 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "capstone", specifier = ">=5.0.6" },
-    { name = "libclang", marker = "extra == 'dev'", specifier = "~=15.0.0" },
+    { name = "libclang", marker = "extra == 'libclang'", specifier = ">=18.1.1" },
     { name = "pefile", specifier = ">=2021.9.3" },
     { name = "setuptools", specifier = "<79.0.0" },
+    { name = "sh", marker = "extra == 'dev'", specifier = ">=2.2.2" },
+    { name = "typer", marker = "extra == 'dev'", specifier = ">=0.16.0" },
     { name = "unicorn", specifier = "==2.0.1.post1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [
+shell = [
     { name = "sh", specifier = ">=2.2.2" },
     { name = "typer", specifier = ">=0.16.0" },
 ]
 
 [[package]]
 name = "libclang"
-version = "15.0.6.1"
+version = "18.1.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/60/56/7c107ccc000d78c400d083a09f363fe67407048c66eea6c72df1e3303e73/libclang-15.0.6.1.tar.gz", hash = "sha256:a1a8fe038af2962c787c5bac81bfa4b82bb8e279e61e70cc934c10f6e20c73ec", size = 39139 }
+sdist = { url = "https://files.pythonhosted.org/packages/6e/5c/ca35e19a4f142adffa27e3d652196b7362fa612243e2b916845d801454fc/libclang-18.1.1.tar.gz", hash = "sha256:a1214966d08d73d971287fc3ead8dfaf82eb07fb197680d8b3859dbbbbf78250", size = 39612 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/5a/abfaacdb6bc69732c91219dea03d4f06a9c3f86652397b23083e78ffce3d/libclang-15.0.6.1-py2.py3-none-macosx_10_9_x86_64.whl", hash = "sha256:8621795e07b87e17fc7aac9f071bc7fe6b52ed6110c0a96a9975d8113c8c2527", size = 24999921 },
-    { url = "https://files.pythonhosted.org/packages/3f/46/286604ecc39eabc34455311055407e5742f64c415229bb74040bad1f36c0/libclang-15.0.6.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:0bf192c48a8d2992fc5034393ddc99e772ac30e105df84927d62fc88ef8a659f", size = 22759914 },
-    { url = "https://files.pythonhosted.org/packages/bd/ec/55f01bbee070d574c47bb602d8dc17ac3b804e007d4949a8b414e75b7812/libclang-15.0.6.1-py2.py3-none-manylinux2010_x86_64.whl", hash = "sha256:69b01a23ab543908a661532595daa23cf88bd96d80e41f58ba0eaa6a378fe0d8", size = 21526869 },
-    { url = "https://files.pythonhosted.org/packages/9d/a4/91ddea70f385edab6043e384b7bab1556de4a0e98eaaf2d5dde709acdddc/libclang-15.0.6.1-py2.py3-none-manylinux2014_aarch64.whl", hash = "sha256:4a5188184b937132c198ee9de9a8a2316d5fdd1a825398d5ad1a8f5e06f9b40e", size = 19404655 },
-    { url = "https://files.pythonhosted.org/packages/ad/02/ba54cbb85c7819d9f3cdd0f8e57a3655a6c348bb8255de86ccde1fb91294/libclang-15.0.6.1-py2.py3-none-manylinux2014_armv7l.whl", hash = "sha256:f7ffa02ac5e586cfffde039dcccc439d88d0feac7d77bf9426d9ba7543d16545", size = 17801603 },
-    { url = "https://files.pythonhosted.org/packages/dd/25/86a3d85dd5817a74af900ac61c3de091bad466d5e9b7c812dd18c535e07c/libclang-15.0.6.1-py2.py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:aaebb6aa1db73bac3a0ac41e57ef78743079eb68728adbf7e80ee917ae171529", size = 21612721 },
-    { url = "https://files.pythonhosted.org/packages/b3/6b/a631fe18dd130da90ebe42e514d6bc462a8933ccb3dc13c89fa718b0c871/libclang-15.0.6.1-py2.py3-none-win_amd64.whl", hash = "sha256:85afb47630d2070e74b886040ceea1846097ca53cc88d0f1d7751d0f49220028", size = 23192130 },
-    { url = "https://files.pythonhosted.org/packages/f9/58/57af84c048e1801c9c048f49aa1f2547bf9b8e29da275aaf9496bb4bfa0b/libclang-15.0.6.1-py2.py3-none-win_arm64.whl", hash = "sha256:687d8549c110c700fece58dd87727421d0710fdd111aa7eecb01faf8e3f50d4e", size = 19606499 },
+    { url = "https://files.pythonhosted.org/packages/4b/49/f5e3e7e1419872b69f6f5e82ba56e33955a74bd537d8a1f5f1eff2f3668a/libclang-18.1.1-1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:0b2e143f0fac830156feb56f9231ff8338c20aecfe72b4ffe96f19e5a1dbb69a", size = 25836045 },
+    { url = "https://files.pythonhosted.org/packages/e2/e5/fc61bbded91a8830ccce94c5294ecd6e88e496cc85f6704bf350c0634b70/libclang-18.1.1-py2.py3-none-macosx_10_9_x86_64.whl", hash = "sha256:6f14c3f194704e5d09769108f03185fce7acaf1d1ae4bbb2f30a72c2400cb7c5", size = 26502641 },
+    { url = "https://files.pythonhosted.org/packages/db/ed/1df62b44db2583375f6a8a5e2ca5432bbdc3edb477942b9b7c848c720055/libclang-18.1.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:83ce5045d101b669ac38e6da8e58765f12da2d3aafb3b9b98d88b286a60964d8", size = 26420207 },
+    { url = "https://files.pythonhosted.org/packages/1d/fc/716c1e62e512ef1c160e7984a73a5fc7df45166f2ff3f254e71c58076f7c/libclang-18.1.1-py2.py3-none-manylinux2010_x86_64.whl", hash = "sha256:c533091d8a3bbf7460a00cb6c1a71da93bffe148f172c7d03b1c31fbf8aa2a0b", size = 24515943 },
+    { url = "https://files.pythonhosted.org/packages/3c/3d/f0ac1150280d8d20d059608cf2d5ff61b7c3b7f7bcf9c0f425ab92df769a/libclang-18.1.1-py2.py3-none-manylinux2014_aarch64.whl", hash = "sha256:54dda940a4a0491a9d1532bf071ea3ef26e6dbaf03b5000ed94dd7174e8f9592", size = 23784972 },
+    { url = "https://files.pythonhosted.org/packages/fe/2f/d920822c2b1ce9326a4c78c0c2b4aa3fde610c7ee9f631b600acb5376c26/libclang-18.1.1-py2.py3-none-manylinux2014_armv7l.whl", hash = "sha256:cf4a99b05376513717ab5d82a0db832c56ccea4fd61a69dbb7bccf2dfb207dbe", size = 20259606 },
+    { url = "https://files.pythonhosted.org/packages/2d/c2/de1db8c6d413597076a4259cea409b83459b2db997c003578affdd32bf66/libclang-18.1.1-py2.py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:69f8eb8f65c279e765ffd28aaa7e9e364c776c17618af8bff22a8df58677ff4f", size = 24921494 },
+    { url = "https://files.pythonhosted.org/packages/0b/2d/3f480b1e1d31eb3d6de5e3ef641954e5c67430d5ac93b7fa7e07589576c7/libclang-18.1.1-py2.py3-none-win_amd64.whl", hash = "sha256:4dd2d3b82fab35e2bf9ca717d7b63ac990a3519c7e312f19fa8e86dcc712f7fb", size = 26415083 },
+    { url = "https://files.pythonhosted.org/packages/71/cf/e01dc4cc79779cd82d77888a88ae2fa424d93b445ad4f6c02bfc18335b70/libclang-18.1.1-py2.py3-none-win_arm64.whl", hash = "sha256:3f0e1f49f04d3cd198985fea0511576b0aee16f9ff0e0f0cad7f9c57ec3c20e8", size = 22361112 },
 ]
 
 [[package]]
