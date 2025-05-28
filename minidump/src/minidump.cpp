@@ -331,7 +331,7 @@ void minidump_file::print_modules() const {
     std::cout << "== ModuleList ==" << std::endl;
     
     std::vector<std::string> headers = {"Module name", "BaseAddress", "Size", "Endaddress", "Timestamp"};
-    std::vector<size_t> widths = {115, 11, 8, 10, 10};
+    std::vector<size_t> widths = {59, 14, 8, 14, 10};
     
     utils::print_table_header(headers, widths);
     utils::print_table_separator(widths);
@@ -437,10 +437,10 @@ void minidump_file::print_exception() const {
     utils::print_table_separator(widths);
     
     std::vector<std::string> values = {
-        utils::format_hex(exception_info_->thread_id, false),
-        "ExceptionCode.EXCEPTION_UNKNOWN",
-        utils::format_hex(exception_info_->exception_record.exception_flags, false),
-        utils::format_hex(exception_info_->exception_record.exception_record, false),
+        utils::format_hex(exception_info_->thread_id),
+        "ExceptionCode.EXCEPTION_UNKNOWN", 
+        utils::format_hex(exception_info_->exception_record.exception_flags),
+        utils::format_hex(exception_info_->exception_record.exception_record),
         utils::format_hex(exception_info_->exception_record.exception_address),
         "[]"
     };
@@ -463,6 +463,7 @@ void minidump_file::print_misc_info() const {
     std::cout << "ProcessorMhzLimit " << misc_info_->processor_mhz_limit << std::endl;
     std::cout << "ProcessorMaxIdleState " << misc_info_->processor_max_idle_state << std::endl;
     std::cout << "ProcessorCurrentIdleState " << misc_info_->processor_current_idle_state << std::endl;
+    std::cout << std::endl;
 }
 
 void minidump_file::print_handles() const {
