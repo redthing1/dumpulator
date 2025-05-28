@@ -48,8 +48,6 @@ dependencies = [
     { name = "capstone" },
     { name = "pefile" },
     { name = "setuptools" },
-    { name = "sh" },
-    { name = "typer" },
     { name = "unicorn" },
 ]
 
@@ -58,15 +56,25 @@ dev = [
     { name = "libclang" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "sh" },
+    { name = "typer" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "capstone", specifier = ">=5.0.6" },
     { name = "libclang", marker = "extra == 'dev'", specifier = "~=15.0.0" },
     { name = "pefile", specifier = ">=2021.9.3" },
     { name = "setuptools", specifier = "<79.0.0" },
+    { name = "unicorn", specifier = "==2.0.1.post1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
     { name = "sh", specifier = ">=2.2.2" },
     { name = "typer", specifier = ">=0.16.0" },
-    { name = "unicorn", specifier = "==2.0.1.post1" },
 ]
 
 [[package]]

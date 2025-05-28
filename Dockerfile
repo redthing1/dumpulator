@@ -52,9 +52,7 @@ RUN \
     \
     # compile pyproject.toml to a requirements file to install *only* project dependencies
     echo "compiling project dependencies from /tmp_setup/pyproject.toml..." && \
-    uv pip compile /tmp_setup/pyproject.toml --output-file /tmp_setup/requirements.txt --python /opt/venv/bin/python && \
-    # if you want to include 'dev' dependencies (like libclang):
-    # uv pip compile /tmp_setup/pyproject.toml --extra dev --output-file /tmp_setup/requirements.txt --python /opt/venv/bin/python
+    uv pip compile /tmp_setup/pyproject.toml --extra dev --output-file /tmp_setup/requirements.txt --python /opt/venv/bin/python && \
     \
     echo "installing compiled project dependencies into /opt/venv..." && \
     uv pip sync --python /opt/venv/bin/python /tmp_setup/requirements.txt && \
