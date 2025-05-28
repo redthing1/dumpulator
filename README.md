@@ -1,4 +1,24 @@
-# dumpulator
+# dumpulator (rt1)
+
+# docker
+
+build the docker image with python dependencies
+```sh
+docker build . -t redthing1/dumpulator
+```
+
+run the image
+```sh
+podman run --rm -it -v $(pwd):/prj redthing1/dumpulator
+```
+
+inside the shell
+
+```sh
+$ poetry run python ./tests/getting-started.py
+```
+
+# original readme
 
 **Note: This is a work-in-progress prototype, please treat it as such. Pull requests are welcome! You can get your feet wet with [good first issues](https://github.com/mrexodia/dumpulator/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)**
 
