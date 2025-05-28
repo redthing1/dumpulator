@@ -1,5 +1,9 @@
 # dumpulator (rt1)
 
+# usage
+
+uv run python ./tests/getting-started.py
+
 # docker
 
 because dumpulator relies on a specific version of unicorn engine to work, i have packaged it in docker to ensure future functioning.
