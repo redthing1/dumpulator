@@ -1,5 +1,9 @@
 *.tmp
 
+# Output files
+*_output.txt
+*.log
+
 .claude
 .vscode
 

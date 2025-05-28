@@ -107,6 +107,9 @@ bool minidump_file::parse_streams(std::ifstream& file) {
         case stream_type::misc_info_stream:
             if (!parse_misc_info_stream(file, dir)) return false;
             break;
+        case stream_type::handle_data_stream:
+            if (!parse_handle_data_stream(file, dir)) return false;
+            break;
         default:
             // Skip unknown streams
             break;
@@ -233,6 +236,58 @@ bool minidump_file::parse_misc_info_stream(std::ifstream& file, const directory&
     return !file.fail();
 }
 
+bool minidump_file::parse_handle_data_stream(std::ifstream& file, const directory& dir) {
+    file.seekg(dir.rva);
+    
+    handle_data_stream_header header;
+    file.read(reinterpret_cast<char*>(&header), sizeof(header));
+    if (file.fail()) return false;
+    
+    for (uint32_t i = 0; i < header.number_of_descriptors; ++i) {
+        handle_descriptor handle;
+        file.read(reinterpret_cast<char*>(&handle), 32); // Fixed size for basic descriptor
+        if (file.fail()) break;
+        
+        // Read type name if available
+        if (handle.type_name_rva != 0) {
+            auto current_pos = file.tellg();
+            file.seekg(handle.type_name_rva);
+            
+            uint32_t length;
+            file.read(reinterpret_cast<char*>(&length), sizeof(length));
+            if (!file.fail() && length > 0 && length < 2048) {
+                std::vector<uint8_t> name_buffer(length);
+                file.read(reinterpret_cast<char*>(name_buffer.data()), length);
+                if (!file.fail()) {
+                    handle.type_name = utils::read_utf16_string(name_buffer.data(), length);
+                }
+            }
+            file.seekg(current_pos);
+        }
+        
+        // Read object name if available
+        if (handle.object_name_rva != 0) {
+            auto current_pos = file.tellg();
+            file.seekg(handle.object_name_rva);
+            
+            uint32_t length;
+            file.read(reinterpret_cast<char*>(&length), sizeof(length));
+            if (!file.fail() && length > 0 && length < 2048) {
+                std::vector<uint8_t> name_buffer(length);
+                file.read(reinterpret_cast<char*>(name_buffer.data()), length);
+                if (!file.fail()) {
+                    handle.object_name = utils::read_utf16_string(name_buffer.data(), length);
+                }
+            }
+            file.seekg(current_pos);
+        }
+        
+        handles_.push_back(handle);
+    }
+    
+    return true;
+}
+
 // Print methods with exact Python formatting
 void minidump_file::print_all() const {
     std::cout << std::endl;
@@ -245,7 +300,9 @@ void minidump_file::print_all() const {
     print_memory_regions();
     print_system_info();
     print_exception();
+    print_handles();
     print_misc_info();
+    print_header();
 }
 
 void minidump_file::print_threads() const {
@@ -274,7 +331,7 @@ void minidump_file::print_modules() const {
     std::cout << "== ModuleList ==" << std::endl;
     
     std::vector<std::string> headers = {"Module name", "BaseAddress", "Size", "Endaddress", "Timestamp"};
-    std::vector<size_t> widths = {59, 14, 8, 14, 10};
+    std::vector<size_t> widths = {115, 11, 8, 10, 10};
     
     utils::print_table_header(headers, widths);
     utils::print_table_separator(widths);
@@ -282,9 +339,9 @@ void minidump_file::print_modules() const {
     for (const auto& module : modules_) {
         std::vector<std::string> values = {
             module.module_name,
-            utils::format_hex(module.base_of_image),
+            utils::format_hex_padded(module.base_of_image, 8),
             utils::format_hex(module.size_of_image),
-            utils::format_hex(module.end_address()),
+            utils::format_hex_padded(module.end_address(), 8),
             utils::format_hex(module.time_date_stamp)
         };
         utils::print_table_row(values, widths);
@@ -339,21 +396,32 @@ void minidump_file::print_memory_regions() const {
 void minidump_file::print_system_info() const {
     if (!system_info_) return;
     
-    std::cout << "== SystemInfo ==" << std::endl;
-    std::cout << "ProcessorArchitecture " << utils::processor_architecture_to_string(static_cast<processor_architecture>(system_info_->processor_architecture)) << std::endl;
+    std::cout << "== System Info ==" << std::endl;
+    std::cout << "ProcessorArchitecture PROCESSOR_ARCHITECTURE." << utils::processor_architecture_to_string(static_cast<processor_architecture>(system_info_->processor_architecture)) << std::endl;
+    std::cout << "OperatingSystem -guess- " << utils::guess_operating_system(*system_info_) << std::endl;
     std::cout << "ProcessorLevel " << system_info_->processor_level << std::endl;
     std::cout << "ProcessorRevision " << utils::format_hex(system_info_->processor_revision) << std::endl;
     std::cout << "NumberOfProcessors " << static_cast<int>(system_info_->number_of_processors) << std::endl;
-    std::cout << "ProductType " << static_cast<int>(system_info_->product_type) << std::endl;
+    std::cout << "ProductType PRODUCT_TYPE." << (system_info_->product_type == 1 ? "VER_NT_WORKSTATION" : 
+                                                    system_info_->product_type == 2 ? "VER_NT_DOMAIN_CONTROLLER" : "VER_NT_SERVER") << std::endl;
     std::cout << "MajorVersion " << system_info_->major_version << std::endl;
     std::cout << "MinorVersion " << system_info_->minor_version << std::endl;
     std::cout << "BuildNumber " << system_info_->build_number << std::endl;
-    std::cout << "PlatformId " << system_info_->platform_id << std::endl;
-    std::cout << "CSDVersionRva " << utils::format_hex(system_info_->csd_version_rva) << std::endl;
+    std::cout << "PlatformId PLATFORM_ID." << (system_info_->platform_id == 2 ? "VER_PLATFORM_WIN32_NT" : "UNKNOWN") << std::endl;
+    std::cout << "CSDVersion: " << std::endl;
     std::cout << "SuiteMask " << system_info_->suite_mask << std::endl;
-    std::cout << "Reserved2 " << system_info_->reserved2 << std::endl;
-    std::cout << "ProcessorFeatures " << utils::format_hex(system_info_->processor_features[0]) << " " << utils::format_hex(system_info_->processor_features[1]) << std::endl;
-    std::cout << "OperatingSystem " << utils::guess_operating_system(*system_info_) << std::endl;
+    
+    // Extract VendorId, VersionInformation, etc. from processor_features like Python does
+    uint64_t features0 = system_info_->processor_features[0];
+    uint64_t features1 = system_info_->processor_features[1];
+    
+    std::cout << "VendorId " << utils::format_hex(features0 & 0xFFFFFFFF) << " " 
+              << utils::format_hex((features0 >> 32) & 0xFFFFFFFF) << " " 
+              << utils::format_hex(features1 & 0xFFFFFFFF) << std::endl;
+    std::cout << "VersionInformation " << ((features1 >> 32) & 0xFFFFFFFF) << std::endl;
+    std::cout << "FeatureInformation " << (features0 & 0xFFFFFFFF) << std::endl;
+    std::cout << "AMDExtendedCpuFeatures " << ((features0 >> 32) & 0xFFFFFFFF) << std::endl;
+    std::cout << "ProcessorFeatures" << std::endl;
     std::cout << std::endl;
 }
 
@@ -383,7 +451,7 @@ void minidump_file::print_exception() const {
 void minidump_file::print_misc_info() const {
     if (!misc_info_) return;
     
-    std::cout << "== MiscInfo ==" << std::endl;
+    std::cout << "== MinidumpMiscInfo ==" << std::endl;
     std::cout << "SizeOfInfo " << misc_info_->size_of_info << std::endl;
     std::cout << "Flags1 " << misc_info_->flags1 << std::endl;
     std::cout << "ProcessId " << misc_info_->process_id << std::endl;
@@ -395,6 +463,38 @@ void minidump_file::print_misc_info() const {
     std::cout << "ProcessorMhzLimit " << misc_info_->processor_mhz_limit << std::endl;
     std::cout << "ProcessorMaxIdleState " << misc_info_->processor_max_idle_state << std::endl;
     std::cout << "ProcessorCurrentIdleState " << misc_info_->processor_current_idle_state << std::endl;
+}
+
+void minidump_file::print_handles() const {
+    if (handles_.empty()) return;
+    
+    std::cout << "== MinidumpHandleDataStream ==" << std::endl;
+    std::cout << "== MinidumpHandleDescriptor == " << std::endl;
+    for (const auto& handle : handles_) {
+        std::cout << "Handle 0x" << std::hex << std::setfill('0') << std::setw(8) << handle.handle 
+                  << " TypeName " << handle.type_name 
+                  << " ObjectName " << handle.object_name 
+                  << " Attributes " << std::dec << handle.attributes 
+                  << " GrantedAccess " << handle.granted_access 
+                  << " HandleCount " << handle.handle_count 
+                  << " PointerCount " << handle.pointer_count << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+void minidump_file::print_header() const {
+    std::cout << std::endl;
+    std::cout << "== MinidumpHeader ==" << std::endl;
+    std::cout << "Signature: PMDM" << std::endl;
+    std::cout << "Version: " << header_.version << std::endl;
+    std::cout << "ImplementationVersion: " << header_.implementation_version << std::endl;
+    std::cout << "NumberOfStreams: " << header_.number_of_streams << std::endl;
+    std::cout << "StreamDirectoryRva: " << header_.stream_directory_rva << std::endl;
+    std::cout << "CheckSum: " << header_.checksum << std::endl;
+    std::cout << "Reserved: " << header_.time_date_stamp << std::endl;
+    std::cout << "TimeDateStamp: " << static_cast<uint32_t>(header_.flags & 0xFFFFFFFF) << std::endl;
+    std::cout << "Flags: " << static_cast<uint32_t>(header_.flags >> 32) << std::endl;
+    std::cout << std::endl;
 }
 
 std::unique_ptr<minidump_reader> minidump_file::get_reader() {
@@ -597,6 +697,12 @@ std::string format_hex(uint64_t value, bool prefix) {
     std::ostringstream oss;
     if (prefix) oss << "0x";
     oss << std::hex << value;
+    return oss.str();
+}
+
+std::string format_hex_padded(uint64_t value, size_t width) {
+    std::ostringstream oss;
+    oss << "0x" << std::hex << std::setw(width) << std::setfill('0') << value;
     return oss.str();
 }
 

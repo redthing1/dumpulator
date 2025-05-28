@@ -117,10 +117,13 @@ struct thread_info {
     uint32_t priority_class;
     uint32_t priority;
     uint64_t teb;
-    uint32_t stack_start_rva;
-    uint32_t stack_size;
+    // Stack: MINIDUMP_MEMORY_DESCRIPTOR (16 bytes)
+    uint64_t stack_start_of_memory_range;
+    uint32_t stack_data_size;
+    uint32_t stack_rva;
+    // ThreadContext: MINIDUMP_LOCATION_DESCRIPTOR (8 bytes)
+    uint32_t context_data_size;
     uint32_t context_rva;
-    uint32_t context_size;
 };
 
 struct module_info {
@@ -230,6 +233,26 @@ struct misc_info {
     uint32_t processor_current_idle_state;
 };
 
+struct handle_data_stream_header {
+    uint32_t size_of_header;
+    uint32_t size_of_descriptor;
+    uint32_t number_of_descriptors;
+    uint32_t reserved;
+};
+
+struct handle_descriptor {
+    uint64_t handle;
+    uint32_t type_name_rva;
+    uint32_t object_name_rva;
+    uint32_t attributes;
+    uint32_t granted_access;
+    uint32_t handle_count;
+    uint32_t pointer_count;
+    
+    std::string type_name;
+    std::string object_name;
+};
+
 // Forward declarations
 class minidump_reader;
 
@@ -248,6 +271,7 @@ public:
     [[nodiscard]] const system_info* get_system_info() const noexcept { return system_info_.get(); }
     [[nodiscard]] const exception_info* get_exception_info() const noexcept { return exception_info_.get(); }
     [[nodiscard]] const misc_info* get_misc_info() const noexcept { return misc_info_.get(); }
+    [[nodiscard]] const std::vector<handle_descriptor>& handles() const noexcept { return handles_; }
     
     // Output methods (Python-compatible)
     void print_all() const;
@@ -258,6 +282,8 @@ public:
     void print_system_info() const;
     void print_exception() const;
     void print_misc_info() const;
+    void print_handles() const;
+    void print_header() const;
     
     // Create reader for memory access
     std::unique_ptr<minidump_reader> get_reader();
@@ -279,6 +305,7 @@ private:
     bool parse_system_info_stream(std::ifstream& file, const directory& dir);
     bool parse_exception_stream(std::ifstream& file, const directory& dir);
     bool parse_misc_info_stream(std::ifstream& file, const directory& dir);
+    bool parse_handle_data_stream(std::ifstream& file, const directory& dir);
     
     std::string filename_;
     minidump_header header_{};
@@ -290,6 +317,7 @@ private:
     std::unique_ptr<system_info> system_info_;
     std::unique_ptr<exception_info> exception_info_;
     std::unique_ptr<misc_info> misc_info_;
+    std::vector<handle_descriptor> handles_;
 };
 
 // minidump_reader for memory access operations
@@ -327,6 +355,7 @@ namespace utils {
     std::string guess_operating_system(const system_info& sysinfo);
     std::string read_utf16_string(const uint8_t* buffer, size_t length);
     std::string format_hex(uint64_t value, bool prefix = true);
+    std::string format_hex_padded(uint64_t value, size_t width);
     std::string format_timestamp(uint32_t timestamp);
     
     // Table formatting (Python-compatible)

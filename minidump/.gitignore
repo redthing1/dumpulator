@@ -10,11 +10,6 @@ cmake-build-*/
 *.dll
 *.exe
 
-# Output files
-python_output.txt
-cpp_output.txt
-*.log
-
 # IDE files
 .vscode/
 .idea/

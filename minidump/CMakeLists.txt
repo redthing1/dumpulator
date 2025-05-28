@@ -36,6 +36,20 @@ add_executable(parse_dump
 
 target_link_libraries(parse_dump PRIVATE minidump)
 
+# Create debug program
+add_executable(debug_dump
+    examples/debug_dump.cpp
+)
+
+target_link_libraries(debug_dump PRIVATE minidump)
+
+# Create struct debug program
+add_executable(struct_debug
+    examples/struct_debug.cpp
+)
+
+target_link_libraries(struct_debug PRIVATE minidump)
+
 # Define test data paths
 set(TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../dumps")
 set(TEST_DMP_FILE "${TEST_DATA_DIR}/StringEncryptionFun_x64.dmp")
