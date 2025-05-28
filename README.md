@@ -2,6 +2,9 @@
 
 # docker
 
+because dumpulator relies on a specific version of unicorn engine to work, i have packaged it in docker to ensure future functioning.
+the docker container pulls in all necessary dependencies so that dumpulator's source and scripts can be run in a future-proof way.
+
 build the docker image with python dependencies
 ```sh
 docker build . -t redthing1/dumpulator
