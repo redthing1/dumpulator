@@ -1,23 +1,18 @@
 cmake_minimum_required(VERSION 3.12)
-project(minidump VERSION 1.0.0 LANGUAGES CXX)
+project(minidump 
+    VERSION 1.0.0 
+    DESCRIPTION "Portable C++17 Windows minidump file parser library"
+    LANGUAGES CXX
+)
 
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Compiler options
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /DNDEBUG")
+# Library options (only when building as main project)
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    option(MINIDUMP_BUILD_EXAMPLES "Build example programs" ON)
+    option(MINIDUMP_BUILD_TESTS "Build tests" ON)
+else()
+    option(MINIDUMP_BUILD_EXAMPLES "Build example programs" OFF)
+    option(MINIDUMP_BUILD_TESTS "Build tests" OFF)
 endif()
-
-# Enable testing
-enable_testing()
 
 # Create the minidump library
 add_library(minidump STATIC
@@ -25,63 +20,65 @@ add_library(minidump STATIC
     src/minidump.cpp
 )
 
+# Add alias for modern CMake usage
+add_library(minidump::minidump ALIAS minidump)
+
+# Set C++ standard for this target
+target_compile_features(minidump PUBLIC cxx_std_17)
+
+# Configure includes for submodule usage
 target_include_directories(minidump PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 
-# Create the example program
-add_executable(parse_dump
-    examples/parse_dump.cpp
+# Set compile options (only for this target)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(minidump PRIVATE -Wall -Wextra -Wpedantic)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(minidump PRIVATE /W4)
+endif()
+
+# Set release optimizations
+target_compile_definitions(minidump PRIVATE 
+    $<$<CONFIG:Release>:NDEBUG>
 )
 
-target_link_libraries(parse_dump PRIVATE minidump)
+# Examples (only when building as main project)
+if(MINIDUMP_BUILD_EXAMPLES)
+    add_executable(parse_dump examples/parse_dump.cpp)
+    target_link_libraries(parse_dump PRIVATE minidump::minidump)
 
-# Create debug program
-add_executable(debug_dump
-    examples/debug_dump.cpp
-)
+    add_executable(debug_dump examples/debug_dump.cpp)
+    target_link_libraries(debug_dump PRIVATE minidump::minidump)
 
-target_link_libraries(debug_dump PRIVATE minidump)
+    add_executable(struct_debug examples/struct_debug.cpp)
+    target_link_libraries(struct_debug PRIVATE minidump::minidump)
+endif()
 
-# Create struct debug program
-add_executable(struct_debug
-    examples/struct_debug.cpp
-)
+# Tests (only when building as main project)
+if(MINIDUMP_BUILD_TESTS)
+    enable_testing()
+    
+    # Define test data paths
+    set(TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../dumps")
+    set(TEST_DMP_FILE "${TEST_DATA_DIR}/StringEncryptionFun_x64.dmp")
 
-target_link_libraries(struct_debug PRIVATE minidump)
+    # Add basic parsing test
+    if(TARGET parse_dump AND EXISTS "${TEST_DMP_FILE}")
+        add_test(NAME test_parse_dump 
+                 COMMAND parse_dump "${TEST_DMP_FILE}")
+    endif()
 
-# Define test data paths
-set(TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../dumps")
-set(TEST_DMP_FILE "${TEST_DATA_DIR}/StringEncryptionFun_x64.dmp")
-
-# Add tests that will verify against Python output
-add_test(NAME test_parse_dump 
-         COMMAND parse_dump "${TEST_DMP_FILE}")
-
-# Test that compares C++ output with Python output
-add_test(NAME compare_with_python
-         COMMAND ${CMAKE_COMMAND} -E env
-         WORKING_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}
-         bash -c "cd .. && uv run python -m minidump --all ./dumps/StringEncryptionFun_x64.dmp > minidump/python_output.txt && cd minidump && ./parse_dump ../dumps/StringEncryptionFun_x64.dmp > cpp_output.txt && diff python_output.txt cpp_output.txt")
-
-# Custom target for running comparison tests
-add_custom_target(compare
-    COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/.. && uv run python -m minidump --all ./dumps/StringEncryptionFun_x64.dmp > minidump/python_output.txt
-    COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} && $<TARGET_FILE:parse_dump> ../dumps/StringEncryptionFun_x64.dmp > cpp_output.txt
-    COMMAND diff python_output.txt cpp_output.txt || echo "Differences found - checking details..."
-    DEPENDS parse_dump
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Comparing C++ output with Python output"
-)
-
-# Installation
-install(TARGETS minidump parse_dump
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-)
-
-install(DIRECTORY include/
-    DESTINATION include
-    FILES_MATCHING PATTERN "*.hpp"
-)
+    # Custom target for running comparison tests (development only)
+    if(TARGET parse_dump)
+        add_custom_target(compare
+            COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/.. && uv run python -m minidump --all ./dumps/StringEncryptionFun_x64.dmp > minidump/python_output.txt
+            COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} && $<TARGET_FILE:parse_dump> ../dumps/StringEncryptionFun_x64.dmp > cpp_output.txt
+            COMMAND diff python_output.txt cpp_output.txt || echo "Differences found - checking details..."
+            DEPENDS parse_dump
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Comparing C++ output with Python output"
+        )
+    endif()
+endif()

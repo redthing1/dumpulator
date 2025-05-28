@@ -101,13 +101,8 @@ struct system_info {
     uint32_t build_number;
     uint32_t platform_id;
     uint32_t csd_version_rva;
-    union {
-        struct {
-            uint16_t suite_mask;
-            uint16_t reserved2;
-        };
-        uint32_t reserved1;
-    };
+    uint16_t suite_mask;
+    uint16_t reserved2;
     uint64_t processor_features[2];
 };
 
