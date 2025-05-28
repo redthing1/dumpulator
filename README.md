@@ -16,7 +16,7 @@ docker build . -t redthing1/dumpulator
 
 or load a prebuild:
 ```sh
-zstd -c -d ~/Downloads/rt1_dumpulator.zst | podman load
+zstd -c -d ~/Downloads/rt1_dumpulator.zst | docker load
 ```
 
 run the image with sources mounted
