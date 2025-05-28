@@ -18,7 +18,7 @@ podman run --rm -it -v $(pwd):/prj redthing1/dumpulator
 inside the shell
 
 ```sh
-$ poetry run python ./tests/getting-started.py
+$ python ./tests/getting-started.py
 ```
 
 # original readme

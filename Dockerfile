@@ -1,50 +1,78 @@
-FROM debian:bookworm-slim
+# use python 3.11 slim as the base
+from python:3.11-slim
 
-# install dependencies
-RUN apt update && apt install -y \
-  # common build dependencies
-  bash git curl ccache \
-  # c++ build dependencies
-  build-essential cmake ninja-build \
-  # python build dependencies
-  python3 python3-pip patchelf \
-  && apt clean && rm -rf /var/lib/apt/lists/*
+# prevent interactive prompts during apt-get install
+env debian_frontend=noninteractive
 
-# install poetry for python
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-  && echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc \
-  && echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bash_profile
+# install system dependencies
+run apt-get update && apt-get install -y --no-install-recommends \
+  # common tools
+  bash zsh git curl vim sudo \
+  ca-certificates \
+  # c/c++ build dependencies (often needed for native python packages)
+  build-essential \
+  cmake \
+  ninja-build \
+  # python build tool (though uv handles much, patchelf can be useful)
+  patchelf \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# cool shell
-RUN apt update && apt install -y \
-  zsh \
-  && rm -rf /var/lib/apt/lists/* && apt autoremove -y && apt clean \
-  && git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install \
-  && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
-  # edit the config to add fzf to plugins
-  && sed -i 's/plugins=(git)/plugins=(fzf)/g' /root/.zshrc \
-  # install zsh-autosuggestions
-  && git clone https://github.com/zsh-users/zsh-autosuggestions /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions \
-  # install zsh-syntax-highlighting
-  && git clone https://github.com/zsh-users/zsh-syntax-highlighting /root/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting \
-  # change the theme
-  && sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="cypher"/g' /root/.zshrc \
-  # source bash profile in zsh
-  && echo "source ~/.bash_profile" >> /root/.zshrc \
-  && echo "Fancy shell installed"
+# install uv (from official astral-sh image)
+copy --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# copy pyproject and install package
-COPY ./pyproject.toml /prj/
-COPY ./README.md /prj/
-COPY ./src /prj/src/
+# set up oh my zsh and plugins
+run \
+    # install fzf (often used with zsh)
+    git clone --depth 1 https://github.com/junegunn/fzf.git /root/.fzf && \
+    /root/.fzf/install --all && \
+    # install oh my zsh non-interactively
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
+    # configure .zshrc for plugins
+    sed -i 's/plugins=(git)/plugins=(fzf)/g' /root/.zshrc && \
+    # clone custom plugins
+    git clone https://github.com/zsh-users/zsh-autosuggestions /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting /root/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting && \
+    # set zsh theme and disable auto-updates
+    sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="minimal"/g' /root/.zshrc && \
+    echo "zstyle ':omz:update' mode disabled" >> /root/.zshrc
 
-RUN cd /prj && \
-  bash -l -c 'poetry install --no-interaction'
+# create the project's virtual environment and pre-install dependencies
+# copy only pyproject.toml (and optionally a lock file if you use one)
+copy ./pyproject.toml /tmp_setup/pyproject.toml
+# if you use a uv.lock file for pinned dependencies, copy it too:
+# copy ./uv.lock /tmp_setup/uv.lock
 
-# clean up so sources can be mounted
-RUN rm -rf /prj/*
+run \
+    # create the virtual environment
+    uv venv /opt/venv --python python3.11 && \
+    # compile pyproject.toml to a requirements file to install *only* dependencies
+    # this avoids installing the "dumpulator" package itself from this temporary context
+    echo "compiling dependencies from /tmp_setup/pyproject.toml..." && \
+    uv pip compile /tmp_setup/pyproject.toml --output-file /tmp_setup/requirements.txt --python /opt/venv/bin/python && \
+    # if you want to include 'dev' dependencies (like libclang):
+    # uv pip compile /tmp_setup/pyproject.toml --extra dev --output-file /tmp_setup/requirements.txt --python /opt/venv/bin/python
+    echo "installing compiled dependencies into /opt/venv..." && \
+    uv pip sync --python /opt/venv/bin/python /tmp_setup/requirements.txt && \
+    # list installed packages for verification (optional, good for debugging)
+    echo "installed packages in /opt/venv:" && \
+    uv pip list --python /opt/venv/bin/python && \
+    # clean up
+    rm -rf /tmp_setup
 
-# set working directory
-WORKDIR /prj
+# set environment variables to activate the virtual environment globally
+# this is the primary way the venv is "activated" for all processes in the container.
+ENV PATH="/opt/venv/bin:$PATH"
+ENV VIRTUAL_ENV="/opt/venv"
 
-CMD ["/bin/zsh", "-l"]
+# copy the entrypoint script and make it executable
+copy ./entrypoint.sh /usr/local/bin/entrypoint.sh
+run chmod +x /usr/local/bin/entrypoint.sh
+
+# set working directory for the container
+workdir /prj
+
+# use the entrypoint to handle editable install before launching the command
+entrypoint ["/usr/local/bin/entrypoint.sh"]
+
+# default to zsh shell (as a login shell to source .zshrc)
+cmd ["/bin/zsh", "-l"]
