@@ -12,6 +12,7 @@ dependencies = [
     "capstone>=5.0.6",
     "setuptools<79.0.0",
     "typer>=0.16.0",
+    "sh>=2.2.2",
 ]
 
 [project.optional-dependencies]
