@@ -1,8 +1,8 @@
 [project]
 name = "dumpulator"
-version = "1.0.0"
+version = "0.0.1"
 description = "An easy-to-use library for emulating code in minidump files."
-authors = [{name = "Duncan Ogilvie", email = "dumpulator@mrexodia.re"}]
+authors = [{name = "Duncan Ogilvie", email = "dumpulator@mrexodia.re"}, {name = "redthing1", email = "redthing1@alt.icu"}]
 readme = "README.md"
 license = {text = "BSL-1.0"}
 requires-python = ">=3.9"
@@ -12,10 +12,6 @@ dependencies = [
     "capstone>=5.0.6",
     "setuptools<79.0.0",
 ]
-
-[project.urls]
-Homepage = "https://github.com/mrexodia/dumpulator"
-Repository = "https://github.com/mrexodia/dumpulator"
 
 [project.optional-dependencies]
 dev = [
